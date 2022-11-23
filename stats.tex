@@ -1,0 +1,311 @@
+\documentclass[journal]{IEEEtran}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{gensymb}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{lscape}
+\usepackage{rotating}
+\usepackage{epstopdf}
+
+\usepackage{cite}
+
+%% Sets page size and margins
+\usepackage[a4paper,top
+=2.25cm,bottom=2.25cm,left=2cm,right=2cm,marginparwidth=1.75cm]{geometry}
+
+%% Useful packages
+\usepackage[style=ieee]{biblatex} 
+\bibliography{main.bib}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\title{Multiple regression model }
+\author{Peter McEnroe (21176671) email: x21176671@student.ncirl.ie }
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The objective of this report is to create a multiple regression model for salary from the \emph{income.csv} file, using the features in the file as predictors. After variable transformation, outlier removal and, various other data cleaning and preparation techniques, a regression model on the dependant variable, log(salary), was chosen. With the exception of homoscedasticity, all assumptions necessary for regression were met.
+\end{abstract}
+\section{Data Description}
+\begin{table}[h]
+    \centering
+\begin{tabular}{|c|c|c|}\hline
+\textbf{Variable (units)} & \textbf{Describtion} & \textbf{Data type}  \\\hline
+Salary ('000\texteuro)  & Income per annum & Float \\\hline
+Age (Years) & age of the individual & Integer \\\hline
+Yrsed (Years)& Years spent in education & Integer \\\hline Edcat & highest level of education& categorical \\(range of &  attained. 1: none &\\
+integers 1-5 ) & and 5: postgraduate degree&\\\hline
+Yrsempl (Years)& Years at current job & Integer \\\hline
+Creddebt & Amount of money  & float \\ ('000\texteuro) & owed on credit cards&\\\hline
+othdebt & Amount of all non & float \\ ('000\texteuro) & credit card debts &\\\hline
+jobsat & level of job satisfaction . & categorical \\(range of & for each person. 1: very unhappy  &\\
+integers 1-5 ) &5:completely satisfied  &\\\hline
+% & &\\\hline
+homeown & variable describing if the person& categorical \\
+(0 or 1) &   owns their home or not.&\\
+    & 0: renter. 1: owner. &\\\hline
+address (Years)& Years at current address & Integer \\\hline
+cars & no. of cars owned & integer \\\hline
+carvalue (\texteuro) & value of the primary car & float \\\hline
+\end{tabular}
+    \caption{table describing each variable in the data set, with units and data type listed, float in to indicate that the number is a decimal (eg \texteuro8405.68)}
+    \label{tab:data_description}
+\end{table}
+\vspace*{-\baselineskip}
+\section{Data Cleaning}
+\subsection{Normality check}
+\indent
+Before any data transformations or data removal, it is important to check the distribution of the data being analyzed. If the data is skewed, data transformations on the variable may be required and if any data is removed before this transformation then several data points would have been omitted in error.\cite{lind_lr_assumptions}
+\begin{figure}[h]
+  \subfloat{
+	\begin{minipage}[c][1\width]{
+	   0.4\textwidth}
+	   \centering
+	   \includegraphics[width=1\textwidth]{boxplots.png}
+	   \caption{boxplots for all non binary (defaulted and homeownership) variables }
+	\end{minipage}}
+ \hfill 	
+  \subfloat{
+	\begin{minipage}[c][1\width]{
+	   0.4\textwidth}
+	   \centering
+	   \includegraphics[width=1\textwidth]{hists_no_transfrom.png}
+	   \caption{histograms for all non binary (defaulted and homeownership) variables }
+	\end{minipage}}
+	\label{fig:boxhist}
+\end{figure}
+\\ \indent
+We can see from the boxplots in fig\ref{fig:boxhist} that several variables have values outside their variable's inter-quartile range (IQR). These variables will need to be further inspected prior to creating a multiple regression model. \\\indent
+Several variables have a skewed distribution and need treatment prior to model implementation.\cite{intro_to_stat_learning_predictor_transform} There is a strong overlap between variables containing outliers and variables that have a skewed distribution. Age, years spent in education, education category, and job satisfaction all seem to be relatively normally distributed. The `Years at current address' variable is slightly positively skewed. Salary, debts, years in current job, car value, and no of cars all appear positively skewed/strongly positively skewed and will require treatment before any regression models are implemented. 
+\subsection{skewness correction}
+\label{skew}
+For the examination of skewness, the variable `no. of cars' will be excluded as outliers of people with 5 or more cars are heavily influencing the distribution, and a mathematical function on an integer number of cars doesn't make any intuitive sense (can't own $\frac{1}{2}$/$log(5)$/$\sqrt{3}$ cars). For these reasons, it seems reasonable not to perform any transformation on this variable. The remaining six variables exhibiting skewness (salary, years at current job, credit debt, other debt, years at current address, car value) are all continuous variables, and as such, can be treated with a mathematical transformation. \\
+\begin{figure}[h]
+    \centering
+	   \includegraphics[width=0.5\textwidth, height =0.3\textheight]{hist_transform.png}
+	   \caption{mathematical transform (log and square root) of skewed variables}
+    \label{fig:transforms}
+\end{figure}
+\\\indent
+The transformations in fig\ref{fig:transforms} all bring about improved normality to each of the skewed variable.\cite{intro_to_stat_and_data_analysis_transforms} Performing the natural log function on each variable appears to improve all six variables' normality, however, the `years at current address' becomes slightly negatively skewed after this transformation. The square root function also does appear to improve the normality of each variable, but not at well as the log transformation, with the exception of the `years at current address' variable which has much better normality under this transformation. 
+\\\indent
+Before any final decision on which transformations to include for the regression model, the impact of each transformation on each variable needs to be closely examined. 
+\begin{figure}[h]
+    \centering
+	   \includegraphics[width=0.5\textwidth]{boxplots_transform.png}
+	   \caption{boxplots of skewed variables before and after their  transformations}
+    \label{fig:boxtransforms}
+\end{figure}
+\\\indent
+Looking at the changes to the boxplots for each transformation, there are clear signs of improved normality for each of the skewed variables. To clarify whether transformations are needed, and valid, examination of the effects of removing outliers before and after transformation is required.\cite{intro_to_stat_learning_outliers} Some of the transformations have yielded larger outliers than their original data and created some new outliers that weren't present before. It may not be necessary to include so many transformed variables in the regression model, as the model should be parsimonious\cite{parsimony}. Certain transformations may lead to an improved model mathematically, but don't make logical sense, for example, if $\sqrt{cars}$ was to be used, that wouldn't make much logical sense as a predictor as it is impossible to have $\sqrt{2}$ cars for example. For this reason, we need to be careful in our transformation choices. 
+\subsection{Salary distribution}
+\\
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = 0.4\textwidth]{salary_distributions.png}
+    \caption{histograms of 4 different distributions of the dependant variable for analyse, salary}
+    \label{fig:salary_distributions}
+\end{figure}
+\indent
+Plotting the distributions in fig.\ref{fig:salary_distributions}, it is apparent that the log function has a more significant impact in bringing the variable towards a normal distribution than just data removal alone. The original data has 304 data points outside the IQR criterion \cite{iqr_outlier}, whereas the log of the data only has 24 such outliers. Furthermore, the log of the data only has more extreme outliers, by using the calculation: $\frac{min(outlier)}{IQR}$, the result for the original data is $3.068$ and for the log of the data $5.559$. This means outliers on the boundary of the IQR criterion are not being thrown out unnecessarily. It is also important to note that no new outliers have cropped up under this transformation. \\
+\subsection{independent variables} 
+\indent
+Now that a suitable subset of the dependant variable has been chosen, we can look at the distributions of the independent variables and decide how to treat them before creating a regression model. Individual linear regression models should give a good indication of the fit of the independent variables in the various possible states.\cite{stats_w_R_lin_mul_reg} \\
+\indent This process also aids in the decision of which variables should be included in the multiple regression model. The goal when selecting independent variables for the model is to create a model that gives the best prediction with the fewest independent variables.\cite{forcasting_predictor_choices} 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = 0.5\textwidth]{scatters_log_salary_no_oldies2x6.png}
+    \caption{scatter plots of each independent variable in the income.csv file plotted against the log of salary}
+    \label{fig:scatterplots}
+\end{figure}\\
+\indent
+The scatter plots in fig.\ref{fig:scatterplots} show the correlation each independent variable has with salary and the effect of removing data points with an age above 65 from the data. Removing people beyond the age of retirement brings about marginally better correlation is some of the variables but this cohort represent approximately $14\%$ of the population size and as such shouldn't be discarded just to artificially improve the regression model. \\
+\indent
+Using individual linear models of each of the skewed variables mentioned in section.\ref{skew}, the relationship of each independent variable to log of salary can be inspected, as well as the assumptions for linear regression. 
+\begin{figure}[htp]
+\centering
+\begin{tabular}{cccc}
+\includegraphics[width=.145\textwidth]{lm_ye_plot.png} &
+%\caption{years at current job}
+\includegraphics[width=.145\textwidth]{lm_creddebt_plot.png} &
+%\caption{credit debt}
+\includegraphics[width=.145\textwidth]{lm_othdebt_plot.png}\\
+%\caption{other debts}
+years at job  & credit debt & other debts  \\[2pt]
+\end{tabular}
+\medskip
+\begin{tabular}{cccc}
+
+\includegraphics[width=.15\textwidth]{lm_add_plot.png} &
+\includegraphics[width=.15\textwidth]{lm_cv_plot.png} &
+\\
+years at address  & car value  \\[2pt]
+\end{tabular}
+
+\caption{linear regression plots (residual vs fitted, Q-Q, Scale-location, residual vs leverage) for the skewed variables, with respect to log(salary) after removing salary outliers. }
+\label{pics:lm_skewed}
+\end{figure} 
+\\
+\indent
+From the plots in fig\ref{pics:lm_skewed}, some of the variables do not have a linear relationship with $log(salary)$ (credit debt, other debts, and car value). They all have normal distribution of errors from inspection of the Q-Q plots. \cite{intro_to_stat_and_data_analysis_model_assumptions}
+\\
+ 
+\begin{figure}[htp]
+\centering
+\begin{tabular}{cccc}
+\includegraphics[width=.145\textwidth]{lm_creddebt_plot_sqrt.png} &
+%\caption{years at current job}
+\includegraphics[width=.145\textwidth]{lm_othdebt_plot_sqrt.png} &
+%\caption{credit debt}
+\includegraphics[width=.145\textwidth]{lm_carvalue_plot_sqrt.png}\\
+%\caption{other debts}
+$\sqrt{creddebt}$  & $\sqrt{othdebt}$ & $\sqrt{car value}$  \\[2pt]
+\end{tabular}
+\caption{linear regression plots for the square roots credit debt, other debt, and car value against log(Salary)}
+\label{pics:lm_sqrt}
+\end{figure} 
+\\
+\indent 
+Transforms to the three independent, non linear variables may lead to a linear correlation.
+Testing various possible transformations, the square root of each nonlinear variable seems to give the best approximation for a normal distribution. However, the residual plots in fig\ref{pics:lm_sqrt} are still not ideal to satisfy that we definitely have a linear relation, or satisfied the assumption of homoscedasicity\cite{intro_to_stat_and_data_analysis_model_assumptions}. These variables are potentially just unsuitable for inclusion in the regression model. 
+
+\section{Assumption checks}
+\indent
+Prior to selecting a model, the assumptions of linear regression and corresponding diagnostics must be checked.
+\subsection{Gauss-Markov Assumptions\cite{gauss_markov}}\label{assumptions}
+\subsubsection{correct functional form for our model }
+\indent
+After transforming salary, using the natural log function, the fit with various independent variables becomes nonlinear as seen in fig.\ref{fig:scatterplots}. Car value was previously linearly scaled with salary so a log fit in the regression should give a good fit. For credit and other debts a transformation apply the square root to the variable is required. All other variables are best unchanged. 
+\subsubsection{Homoscedasticity}
+From the scale-location plots, a subset of which are seen in  fig\ref{pics:lm_skewed}, most variables seem to meet the assumption of homoscedasticity with a flat horizontal line. A couple of the independent variables have heteroscedasticity present, running an ncv test other debts had a p-value of $2.5844e-06$ and credit debts has a p-value of $0.00010506$ meaning the standard errors may be biased, which could lead to these predictors being considered more significant than they are. This is something to be mindful of when selecting a multiple regression model.
+\subsubsection{No Auto correlation between errors}
+\indent
+There is the possibility that the nonlinear relationships appearing in the residual plots in fig\ref{pics:lm_skewed} and fig\ref{pics:lm_sqrt} are a result of autocorrelation between errors. Computing the Durbin-Watson statistic\cite{durbin_watson} for these variables, the results all have a p-value >0.05 so we can accept there are no autocorrelation between errors present.  
+
+%\subsubsection{predictor variables are independent of error terms}
+
+\subsection{Normal error distribution}
+The Q-Q plots for all independent variables all have points close to the straight diagonal line and as such, we can accept that the errors in each variable are normally distributed.\cite{intro_to_stat_and_data_analysis_model_assumptions} 
+\subsection{No multicollinearity}
+Computing the Variance Inflation Factor (VIF)\cite{vif} for a regression model containing all independent variables shows that education category and years spent in education are collinear with a VIF score of $~14.2$ when both are included and $~1.4$ when only one or the other is included. One of these variables should be dropped from the regression model or a new variable combining the two should be created. After testing a variety of combination variables for these collinear variables, dropping the education category yields the best results.
+\\
+\indent
+Age also has a higher than normal VIF score of $4.23$, as several of the other independent variables are time-related. This VIF result is below 5, but not by much, and as a result, age will likely not be included in the model as other variables seem to also carry similar information.
+\subsection{No influential data points}
+The Cook's distance\cite{cooks_distance} of each variable will tell us if we have any overly influential data points in our set. In the 'Residual vs Leverage' plots in the sets of linear regression plots, three independent variables did show outliers, credit debt, other debt, and car values. Removal of these outliers may lead to a better fit in the regression model and help solve some of the other issues these variables contain.
+\section{best fit model}
+\indent 
+The dataset was randomly split into two, 80\% used to create the model, and 20\% to test the validity of the model. 
+\subsection{regsubsets}\label{regsubsets}
+Using the R package `leaps'\cite{leaps} to compute the best combination of independent variables to include in the regression model based on the adjusted $R^2$ value. We will search for models including the two $\sqrt{debt}$ features, and simultaneously search without these features to investigate the significance of the heteroscedasticity these features have, and perhaps it will be possible to find similar effective models in both searches.
+\begin{figure}[h] 
+\centering
+\begin{minipage}{.25\textwidth}
+  \centering
+    \includegraphics[width = 1\textwidth]{best_model_subsets.png}
+    \caption{subset plot,\\ all features included}
+    \label{fig:regsubsets}
+\end{minipage}%
+\begin{minipage}{.25\textwidth}
+  \centering
+    \includegraphics[width = 1\textwidth]{best_model_subsets_no_hetro.png}
+    \caption{subset plot,\\ debt features excluded}
+    \label{fig:regsubsets_no_hetro}
+\end{minipage}%
+\end{figure}
+\\
+\indent
+It is important to consider which search method is best to use for our data to find the best model. It is best to avoid the brute force method as this can be computationally intensive. Stepwise subset selection considers the effect of adding (forward selection) and removing (backward selection) predictor variables to the model and continues until it finds the best one, instead of brute-forcing every possible model.\\\indent This stepwise selection method can also be problematic due to bias in the $adjusted \; R^2$\cite{stepwisebad}, and the possibility of overfitting, so this too will be avoided. That leaves just forward selection and backward elimination. For our model, the backward elimination will be used to avoid the potential of overfitting from adding too many extra unnecessary predictors.  
+\\
+\indent
+From the plot in fig\ref{fig:regsubsets_no_hetro} and the assumption checks in the section \ref{assumptions} the best subset to choose for the regression model are years spent in education, years at current job, and log of car value. Adding any additional features beyond that adds little improvement and including too many predictors could lead to overfitting the model\cite{overfitting}. Since the differences between the adjusted $R^2$ for this search and the search including debt features is small, the model found excluding the debt features will be used to avoid hetroscedasticity. Provisionally, from the regsubsets plot, the model mentioned above seems to be the best choice however we should use other metrics to validate this choice.\\
+\begin{figure}[h] 
+\centering
+\begin{minipage}{.25\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{best_model_lm_plot.png}
+  \caption{\\5 feature model}
+  \label{fig:best_model_lm_pl}
+\end{minipage}%
+\begin{minipage}{.25\textwidth}
+  \centering
+  \includegraphics[width=1.0\linewidth]{best_model_lm_plot_no_hetro.png}
+  \caption{model without debt features}
+  \label{fig:best_model_lm_pl_no_hetro}
+\end{minipage}
+\end{figure}
+\subsection{AIC, BIC and Residual standard error }
+When deciding on which model to choose, parsimony is an important factor. We want our model to be as efficient, and simplistic as it can possibly be, while still giving us the results we desire. \cite{parsimony} To confirm we have as parsimonious a model as possible, AIC\cite{aic}, BIC \cite{bic}, and the residual standard error of each model, are the three additional criteria used to validate the model choice.  
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = 0.3\textwidth]{aic_bic_etc.png}
+    \caption{Plots of AIC, BIC, RSE, and adjusted $R^2$ for both best models (\textcolor{red}{all features}, \textcolor{green}{excluding debts}) against K, where $K = subset \; +2$}
+    \label{fig:aic_etc}
+\end{figure}
+\indent For AIC and BIC and Residual Standard Error the lower score is better, for adjusted $R^2$ closer to 1 is best. From the 4 plots shown, we can see that the models found excluding debt features begin to plateau around a subset size of 3, and 4 for the other case, showing that our model chooses from section\ref{regsubsets} were the correct choices. 
+\subsection{Assumption check on regression model}
+\subsubsection{Correct functional form }
+Plotting the independent variables against log(salary) from the test set, and adding the fitted values will show if the model has the correct functional form. (fig.\ref{fig:predictor_tester_scatter})
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = 0.3\textwidth]{predictor_tester_scatterplots3.png}
+    \caption{Plots of each independent variable from the 20\% tester set (black) overplotted with the predicted values based on the regression model (\textcolor{red}{red}), and in (\textcolor{green}{green}), the model without debt features }
+    \label{fig:predictor_tester_scatter}
+\end{figure}
+\\\indent
+The chosen regression model seems to have good predictions of the correct functional form for each variable. From fig.\ref{fig:predictor_tester_scatter}, it's clear the model chosen without any debt features yields better functional form.
+\subsubsection{Homoscedasticity}\label{homoscedasticity_final}
+Running an NCV test\cite{ncv} on the regression model chosen yields a p-value of $0.0082266$ meaning the model has homoscedasticity. If the model in fig\ref{fig:best_model_lm_pl} were chosen the p-value from this test would be $0.017811$. Further validating the decision to omit these problematic features. 
+
+
+\subsubsection{No auto-correlation between errors}
+Running a Durbin-Watson test\cite{durbin_watson} on the model returns a p-value of $0.224$ meaning we fail to reject the assumption that there is no autocorrelation of errors in the model. 
+\subsubsection{Normal error distributions }
+The distribution of points close to the diagonal line in the Q-Q plot in fig\ref{fig:best_model_lm_pl} means we can accept that there is normal distribution of errors in the model. \cite{intro_to_stat_and_data_analysis_model_assumptions}
+\subsubsection{Normal distribution of residuals}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = 0.3\textwidth]{hist_res_plot.png}
+    \caption{Histogram of the residual standard errors of the regression model}
+    \label{fig:hist_res_plot}
+\end{figure}
+\indent The plot in fig.\ref{fig:hist_res_plot} clearly shows the normal distribution of residuals in the chosen regression model. 
+\subsection{Accuracy of the model}
+\subsubsection{Adjusted $R^2$}\\
+From the assumption checks, we know the model satisfies the assumptions of multiple regression. From our selection method in fig.\ref{fig:regsubsets_no_hetro}, we can be reasonably confident the model hasn't suffered from overfitting, or the pitfalls of stepwise selection or heteroscedasticity in the features chosen, so the $adjusted \; R^2$ value of 0.9191 of the model can be reasonably accepted as true.  
+\subsubsection{Residual Standard Error}
+The residual standard error of our model is $0.1972$ which is higher than that of the model with the debt features included, but this discrepancy is worth it for getting integrity of the model meeting all the required assumptions.
+\subsubsection{Log(salary) predictions}\label{predictions}
+Using the regression model, created on the training set (80\% of the data), on the test set (remaining 20\%), the values of log(salary were predicted. 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = 0.3\textwidth]{predicted_vs_test.png}
+    \caption{Comparison of the predicted values to the actual values of the test set}
+    \label{fig:pred_vs_act}
+\end{figure}
+While there are some predictions outside of the range of actual values, not many deviate from the test data dramatically, and while we would like a lower residual standard error value for the model, it is still quite accurate.  
+\section{conclusion}
+\indent
+To conclude, a regression model containing the features 
+\begin{enumerate}
+    \item years spent in education
+    \item years employed at current job 
+    \item log(car value)
+\end{enumerate}
+does a good job of predicting the fit for all of the features in the income dataset. There is an issue of heteroscedasticity in a couple of the variables as mentioned in section\ref{homoscedasticity_final} but omitting the debt variables solves this problem and still yields an accurate model as seen from the predictions in section\ref{predictions}\\
+\indent
+Additional qualitative variables may help improve the model. For example, a feature similar to homeownership, but for retirement could assist in the outlier detection portion of the data cleaning, as retirement income and a working salary are different metrics. \\
+
+%\bibliographystyle{IEEEtran}
+%\bibliography{main.bib}
+\printbibliography
+\end{document}
